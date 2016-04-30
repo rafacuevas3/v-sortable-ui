@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>VueJS demo</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.css">
+    <link rel="stylesheet" href="assets/css/font-awesome.css">
+    <style type="text/css" media="screen">
+      .sortable-directive.ui-sortable.ui-sortable-disabled {
+        cursor: default;
+      }
+      .sortable-directive.ui-sortable {
+        cursor: move;
+      }
+    </style>
+  </head>
+  <body>
+    <br>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-6">
+          <h4>Example</h4>
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <button type="button" :class="{btn:true, 'btn-default': !editable, 'btn-success': editable}" @click="evaluateEdit">
+                <i class="fa fa-pencil"></i>&nbsp; {{ editable ? "Disable" : "Enable" }} edition
+              </button>
+              <br><br>
+              <div class="sortable-directive" v-sortable-ui data-item="items" data-selector=".my-item">
+                <div class="my-item" v-for="item in items" data-index="{{ $index }}">
+                  <h4>{{ item.title }}</h4>
+                  <div class="panel-group sortable-directive" id="accordion-{{ $index }}" role="tablist" aria-multiselectable="true" 
+                    v-sortable-ui data-item="items[{{ $index }}].panels" data-selector=".panels-item-{{ $index }}">
+                    
+                    <div class="panel panel-default panels-item-{{ $parent.$index }}" 
+                    v-for="panel in item.panels" data-index="{{ $index }}">
+
+                      <div class="panel-heading" role="tab" role="button" data-toggle="collapse" data-parent="#accordion-{{ $parent.$index }}" href="#panel{{ $parent.$index +'-'+ $index }}" aria-expanded="true">
+                        <h4 class="panel-title">{{ panel.title }}</h4>
+                      </div>
+                      <div id="panel{{ $parent.$index +'-'+ $index }}" class="panel-collapse collapse" role="tabpanel">
+                        <div class="panel-body">
+                          {{ panel.content }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <hr>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h4>VueJS Data</h4>
+          <pre>{{ $data | json }}</pre>
+        </div>
+    </div>
+  </div>
+  <script src="assets/js/jquery.js" type="text/javascript" charset="utf-8"></script>
+  <script src="assets/js/jquery-ui.js" type="text/javascript" charset="utf-8"></script>
+  <script src="assets/js/bootstrap.js" type="text/javascript" charset="utf-8"></script>
+  <script src="assets/js/vue.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript">
+    Vue.directive('sortable-ui', {
+      bind: function() {
+        var vm  = this.vm;
+        var $element = $(this.el);
+        var $editable = vm.editable;
+
+        $element.sortable({
+          stop: function(event, ui) {
+            ui.item.effect('highlight',{color:'#EEEEEE'}, 500); 
+            vm.$emit('stopSort', $element.data('item'), $element.data('selector'));
+          },
+          cursor: 'move'
+        });
+
+        $element.sortable("disable");
+      }
+    });
+    var vo = new Vue({
+      el: 'body',
+      data: {
+        editable: false,
+        items: [
+          { 
+            title: "Panel group 1",
+            panels: [
+              {
+                title: "Panel 1 from Panel group 1",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Autem deleniti esse at adipisci ad repellendus quaerat." 
+              },
+              {
+                title: "Panel 2 from Panel group 1",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente quos vero explicabo repellat, quas voluptatum inventore!" 
+              },
+            ] 
+          },
+          { 
+            title: "Panel group 2",
+            panels: [
+              {
+                title: "Panel 1 from Panel group 2",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Suscipit doloremque itaque perferendis veritatis qui, pariatur nemo." 
+              },
+              {
+                title: "Panel 2 from Panel group 2",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatem illum possimus unde cupiditate provident obcaecati ea!" 
+              },
+              {
+                title: "Panel 3 from Panel group 2",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem amet hic perspiciatis similique quis, quia molestias?" 
+              },
+            ]
+          },
+          { 
+            title: "Panel group 3",
+            panels: [
+              {
+                title: "Panel 1 from Panel group 3",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta quo explicabo ea ipsa voluptatum nostrum, modi." 
+              },
+              {
+                title: "Panel 2 from Panel group 3",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ut voluptas dolores atque, error consectetur non deleniti!" 
+              },
+              {
+                title: "Panel 3 from Panel group 3",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Magnam tempore, sapiente accusamus beatae fuga iusto accusantium." 
+              },
+              {
+                title: "Panel 4 from Panel group 3",
+                content: "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dignissimos reiciendis tempora consequuntur asperiores aliquid non, vel." 
+              },
+            ]
+          },
+        ]
+      },
+      methods: {
+        evaluateEdit: function() {
+          this.editable = !this.editable;
+          if (this.editable) {
+            $('.sortable-directive').sortable("enable");
+          } else {
+            $('.sortable-directive').sortable("disable");
+          }
+        }
+      },
+      events: {
+        stopSort: function(name, selector) {
+          var oldArray = vo.$get(name);
+          var newArray = [];
+          
+          $(this.$el).find(selector).each(function() {
+            var index = parseInt($(this).attr('data-index'));
+            newArray.push(oldArray[index]);
+          });
+          
+          vo.$set(name, newArray);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
